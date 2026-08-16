@@ -1295,3 +1295,72 @@ test('y-axis title position: non-Left sets nameLocation to end', () => {
   expect(yAxis[1].nameGap).toEqual(30);
   expect(yAxis[1].nameLocation).toEqual('end');
 });
+
+test('tooltip resolves per-metric formats by query when both queries share a y-axis', () => {
+  // Query A formats as currency, Query B as a percentage, and both are
+  // plotted against the primary y-axis. The tooltip must follow the query a
+  // series belongs to rather than its axis, otherwise every row is formatted
+  // with Query A's metric format while the value labels stay correct
+  // (#33757).
+  const queryDataA = createTestQueryData(
+    [{ ds: 599616000000, sum__num: 1234.5 }],
+    {
+      colnames: ['ds', 'sum__num'],
+      coltypes: [GenericDataType.Temporal, GenericDataType.Numeric],
+      label_map: { ds: ['ds'], sum__num: ['sum__num'] },
+    },
+  );
+  const queryDataB = createTestQueryData(
+    [{ ds: 599616000000, pct__num: 0.5 }],
+    {
+      colnames: ['ds', 'pct__num'],
+      coltypes: [GenericDataType.Temporal, GenericDataType.Numeric],
+      label_map: { ds: ['ds'], pct__num: ['pct__num'] },
+    },
+  );
+  const chartProps = createEchartsTimeseriesTestChartProps<
+    EchartsMixedTimeseriesFormData,
+    EchartsMixedTimeseriesProps
+  >({
+    ...MIXED_TIMESERIES_CHART_PROPS_DEFAULTS,
+    defaultQueriesData: [queryDataA, queryDataB],
+    formData: {
+      ...formData,
+      metrics: ['sum__num'],
+      metricsB: ['pct__num'],
+      groupby: [],
+      groupbyB: [],
+      x_axis: 'ds',
+      yAxisFormat: undefined,
+      yAxisFormatSecondary: undefined,
+      yAxisIndex: 0,
+      yAxisIndexB: 0,
+    },
+    queriesData: [queryDataA, queryDataB],
+    datasource: {
+      columnFormats: { sum__num: '$,.2f', pct__num: '.2%' },
+    },
+  });
+  const transformed = transformProps(chartProps);
+
+  const formatter = (transformed.echartOptions.tooltip as any).formatter as (
+    params: unknown,
+  ) => string;
+
+  expect(
+    formatter({
+      value: [599616000000, 0.5],
+      seriesId: 'pct__num',
+      marker: '',
+      color: '#333',
+    }),
+  ).toContain('50.00%');
+  expect(
+    formatter({
+      value: [599616000000, 1234.5],
+      seriesId: 'sum__num',
+      marker: '',
+      color: '#333',
+    }),
+  ).toContain('$1,234.50');
+});

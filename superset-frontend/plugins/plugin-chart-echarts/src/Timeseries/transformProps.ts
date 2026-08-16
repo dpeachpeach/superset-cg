@@ -1420,6 +1420,18 @@ export default function transformProps(
         const formatter = forcePercentFormatter
           ? percentFormatter
           : (getCustomFormatter(customFormatters, metrics) ?? defaultFormatter);
+        // Each row is formatted with the format of the metric behind its
+        // series, matching the series' value labels; a chart-level fallback
+        // would drop per-metric formats whenever more than one metric is
+        // plotted (#33757).
+        const getRowFormatter = (seriesKey: string) =>
+          forcePercentFormatter
+            ? percentFormatter
+            : (getCustomFormatter(
+                customFormatters,
+                metrics,
+                labelMap?.[inverted[seriesKey] || seriesKey]?.[0],
+              ) ?? defaultFormatter);
 
         const rows: string[][] = [];
         const total = Object.values(filteredForecastValues).reduce(
@@ -1447,7 +1459,7 @@ export default function transformProps(
             const row = formatForecastTooltipSeries({
               ...value,
               seriesName: key,
-              formatter,
+              formatter: getRowFormatter(key),
               marker,
             });
 
