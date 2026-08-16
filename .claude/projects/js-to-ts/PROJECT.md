@@ -1,6 +1,12 @@
 # JavaScript to TypeScript Migration Project
 
-Progressive migration of 219 JS/JSX files to TypeScript in Apache Superset frontend.
+Progressive migration of JS/JSX files to TypeScript in Apache Superset frontend.
+
+**Status: complete for application code.** `superset-frontend/src` contains no
+`.js`/`.jsx` files, and only a handful remain across `packages` and `plugins` —
+all of them Yeoman generator templates, Jest config and CommonJS mocks that are
+intentionally left as JavaScript. This playbook is kept for reference and for
+any stray JavaScript reintroduced in the future.
 
 ## 📁 Project Documentation
 
@@ -16,60 +22,24 @@ Progressive migration of 219 JS/JSX files to TypeScript in Apache Superset front
 
 ## 📊 Migration Progress
 
-**Scope**: 219 files total (112 JS + 107 JSX)
-- Production files: 139 (63%)  
-- Test files: 80 (37%)
+**Strategy**: Leaf-first migration with dependency-aware coordination.
 
-**Strategy**: Leaf-first migration with dependency-aware coordination
+Application code is fully migrated. To see what JavaScript is left:
 
-### Completed Migrations ✅
+```bash
+find superset-frontend/src superset-frontend/packages superset-frontend/plugins \
+  -name '*.js' -o -name '*.jsx' | grep -v node_modules
+```
 
-1. **roundDecimal** - `plugins/legacy-plugin-chart-map-box/src/utils/roundDecimal.js`
-   - Migrated core + test files
-   - Added proper TypeScript function signature with optional precision parameter
-   - All tests pass
+The remaining files are generator templates, Jest configuration and CommonJS
+mocks; they are out of scope and should stay as JavaScript.
 
-2. **timeGrainSqlaAnimationOverrides** - `src/explore/controlPanels/timeGrainSqlaAnimationOverrides.js`
-   - Migrated to TypeScript with ControlPanelState and Dataset types
-   - Added TimeGrainOverrideState interface for return type
-   - Used type guards for safe property access
-
-3. **DebouncedMessageQueue** - `src/utils/DebouncedMessageQueue.js`
-   - Migrated to TypeScript with proper generics
-   - Created DebouncedMessageQueueOptions interface
-   - **CREATED test file** with 4 comprehensive test cases
-   - Excellent class property typing with private/readonly modifiers
-
-**Files Migrated**: 3/219 (1.4%)
-**Tests Created**: 2 (roundDecimal had existing, DebouncedMessageQueue created)
-
-### Next Candidates (Leaf Nodes) 🎯
-
-**Identified leaf files with no JS/JSX dependencies:**
-- `src/utils/hostNamesConfig.js` - Domain configuration utility
-- `src/explore/controlPanels/Separator.js` - Control panel configuration  
-- `src/middleware/loggerMiddleware.js` - Logging middleware
-
-**Migration Quality**: All completed migrations have:
-- ✅ Zero `any` types
-- ✅ Proper TypeScript compilation
-- ✅ ESLint validation passed
-- ✅ Test coverage (created where missing)
-
----
-
-## 📈 Success Metrics
-
-**Per-File Gates**:
+**Per-File Gates** (for any future migration):
 - ✅ `npm run type` passes after each migration
-- ✅ Zero `any` types introduced  
+- ✅ Zero `any` types introduced
 - ✅ All imports properly typed
 - ✅ Types filed in correct hierarchy
-
-**Overall Progress**:
-- **Automatic Integration Rate**: 100% (3/3 migrations required no coordinator fixes)
-- **Test Coverage**: Improved (1 new test file created)
-- **Type Safety**: Enhanced with proper interfaces and generics
+- ✅ Test coverage (created where missing)
 
 ---
 
