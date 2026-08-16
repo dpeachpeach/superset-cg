@@ -2437,3 +2437,60 @@ test('honors the snake_case flag the compare-chart migration stores in params', 
     [BASE_TIMESTAMP + 300000000, 2],
   ]);
 });
+
+test('tooltip formats each row with the format of its own metric', () => {
+  // Two metrics with different saved formats. The tooltip has to resolve the
+  // formatter per series, the way the series value labels do — a single
+  // chart-level formatter drops the per-metric formats.
+  const queryData = createTestQueryData(
+    [{ __timestamp: BASE_TIMESTAMP, sum__num: 1234.5, pct__num: 0.5 }],
+    {
+      colnames: ['__timestamp', 'sum__num', 'pct__num'],
+      coltypes: [
+        GenericDataType.Temporal,
+        GenericDataType.Numeric,
+        GenericDataType.Numeric,
+      ],
+      label_map: {
+        __timestamp: ['__timestamp'],
+        sum__num: ['sum__num'],
+        pct__num: ['pct__num'],
+      },
+    },
+  );
+  const chartProps = createTestChartProps({
+    formData: {
+      metrics: ['sum__num', 'pct__num'],
+      groupby: [],
+      richTooltip: true,
+      yAxisFormat: undefined,
+    },
+    queriesData: [queryData],
+    datasource: {
+      columnFormats: { sum__num: '$,.2f', pct__num: '.2%' },
+    },
+  });
+
+  const tooltipFormatter = (
+    transformProps(chartProps)
+      .echartOptions as unknown as TooltipFormatterOptions
+  ).tooltip.formatter;
+
+  const html = tooltipFormatter([
+    {
+      seriesId: 'sum__num',
+      seriesName: 'sum__num',
+      value: [BASE_TIMESTAMP, 1234.5],
+      marker: '',
+    },
+    {
+      seriesId: 'pct__num',
+      seriesName: 'pct__num',
+      value: [BASE_TIMESTAMP, 0.5],
+      marker: '',
+    },
+  ]);
+
+  expect(html).toContain('$1,234.50');
+  expect(html).toContain('50.00%');
+});

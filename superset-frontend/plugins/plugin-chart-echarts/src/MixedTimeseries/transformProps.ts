@@ -359,16 +359,19 @@ export default function transformProps(
           formatter,
         };
 
-  const primarySeries = new Set<string>();
-  const secondarySeries = new Set<string>();
-  const mapSeriesIdToAxis = (
+  // The query a rendered series comes from, keyed by its rendered name. The
+  // metrics, label map and axis format that describe a series follow its
+  // query, not the y-axis it happens to be plotted against, so both queries
+  // sharing an axis must not collapse into one formatter. Names
+  // colliding across queries resolve to Query A, as the series lookups do.
+  const seriesQueryIndex: Record<string, 0 | 1> = {};
+  const mapSeriesIdToQuery = (
     seriesOption: SeriesOption,
-    index?: number,
+    queryIndex: 0 | 1,
   ): void => {
-    if (index === 1) {
-      secondarySeries.add(seriesOption.id as string);
-    } else {
-      primarySeries.add(seriesOption.id as string);
+    const seriesId = seriesOption.id as string;
+    if (!(seriesId in seriesQueryIndex)) {
+      seriesQueryIndex[seriesId] = queryIndex;
     }
   };
   const showValueIndexesA = extractShowValueIndexes(rawSeriesA, {
@@ -535,7 +538,7 @@ export default function transformProps(
 
     if (transformedSeries) {
       series.push(transformedSeries);
-      mapSeriesIdToAxis(transformedSeries, yAxisIndex);
+      mapSeriesIdToQuery(transformedSeries, 0);
     }
   });
 
@@ -623,7 +626,7 @@ export default function transformProps(
 
     if (transformedSeries) {
       series.push(transformedSeries);
-      mapSeriesIdToAxis(transformedSeries, yAxisIndexB);
+      mapSeriesIdToQuery(transformedSeries, 1);
     }
   });
 
@@ -881,32 +884,23 @@ export default function transformProps(
             // the display-keyed maps, whose values lead with the raw metric
             // label both with and without dimensions. Fall back to the
             // verbose-name inversion for series absent from the maps.
-            let formatterKey;
-            if (primarySeries.has(key)) {
-              formatterKey = displayLabelMap[key]?.[0] ?? inverted[key];
-            } else {
-              formatterKey = displayLabelMapB[key]?.[0] ?? inverted[key];
-            }
-            const tooltipFormatter = getFormatter(
-              customFormatters,
-              formatter,
-              metrics,
-              formatterKey,
-              !!contributionMode,
-            );
-            const tooltipFormatterSecondary = getFormatter(
-              customFormattersSecondary,
-              formatterSecondary,
-              metricsB,
-              formatterKey,
-              !!contributionMode,
+            const isSecondaryQuery = seriesQueryIndex[key] === 1;
+            const formatterKey = isSecondaryQuery
+              ? (displayLabelMapB[key]?.[0] ?? inverted[key])
+              : (displayLabelMap[key]?.[0] ?? inverted[key]);
+            const axisFormatterConfig = getAxisFormatterConfig(
+              isSecondaryQuery ? yAxisIndexB : yAxisIndex,
             );
             const row = formatForecastTooltipSeries({
               ...value,
               seriesName: key,
-              formatter: primarySeries.has(key)
-                ? tooltipFormatter
-                : tooltipFormatterSecondary,
+              formatter: getFormatter(
+                axisFormatterConfig.customFormatters,
+                axisFormatterConfig.formatter,
+                isSecondaryQuery ? metricsB : metrics,
+                formatterKey,
+                !!contributionMode,
+              ),
             });
             rows.push(row);
             if (key === focusedSeries) {
