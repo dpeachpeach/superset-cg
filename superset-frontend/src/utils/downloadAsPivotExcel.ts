@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+import { logging } from '@superset-ui/core';
 import { utils, writeFile } from 'xlsx';
 
 export default function exportPivotExcel(
@@ -23,6 +24,12 @@ export default function exportPivotExcel(
   fileName: string,
 ) {
   const table = document.querySelector(tableSelector);
+  if (!table) {
+    logging.error(
+      `[exportPivotExcel] No element found for selector: "${tableSelector}"`,
+    );
+    return;
+  }
   const workbook = utils.table_to_book(table);
   writeFile(workbook, `${fileName}.xlsx`);
 }
