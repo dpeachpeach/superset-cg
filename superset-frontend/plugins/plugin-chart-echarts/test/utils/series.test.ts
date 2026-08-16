@@ -502,6 +502,32 @@ test('extractDataTotalValues still respects legendState alongside extraMetricLab
   expect(result.totalStackedValues).toEqual([32]);
 });
 
+test('extractDataTotalValues excludes time comparison offsets of extraMetricLabels', () => {
+  const data: DataRecord[] = [
+    { category: '1-3d', A: 32, B: 0, Sort: 2, 'Sort__1 year ago': 3 },
+    { category: '4-6d', A: 10, B: 5, Sort: 1, 'Sort__1 year ago': 4 },
+  ];
+  const result = extractDataTotalValues(data, {
+    stack: true,
+    percentageThreshold: 50,
+    xAxisCol: 'category',
+    extraMetricLabels: ['Sort'],
+  });
+  expect(result.totalStackedValues).toEqual([32, 15]);
+  expect(result.thresholdValues).toEqual([16, 7.5]);
+});
+
+test('extractDataTotalValues counts metrics that merely share a prefix with an extra metric', () => {
+  const data: DataRecord[] = [{ category: '1-3d', SortTotal: 8, Sort: 2 }];
+  const result = extractDataTotalValues(data, {
+    stack: true,
+    percentageThreshold: 0,
+    xAxisCol: 'category',
+    extraMetricLabels: ['Sort'],
+  });
+  expect(result.totalStackedValues).toEqual([8]);
+});
+
 describe('extractSeries', () => {
   test('should generate a valid ECharts timeseries series object', () => {
     const data = [
