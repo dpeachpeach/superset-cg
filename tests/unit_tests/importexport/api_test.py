@@ -70,6 +70,26 @@ def test_export_assets(
     assert contents == dict(mocked_contents)
 
 
+def test_export_assets_is_not_cacheable(
+    mocker: MockerFixture,
+    client: Any,
+    full_api_access: None,
+) -> None:
+    """
+    Test that export responses are not cached by the browser.
+    """
+    ExportAssetsCommand = mocker.patch("superset.importexport.api.ExportAssetsCommand")  # noqa: N806
+    ExportAssetsCommand().run.return_value = [
+        ("metadata.yaml", lambda: "version: 1.0.0\ntype: assets\n"),
+    ]
+
+    response = client.get("/api/v1/assets/export/")
+    assert response.status_code == 200
+    assert response.cache_control.no_cache
+    assert response.cache_control.max_age == 0
+    assert not response.cache_control.public
+
+
 def test_import_assets(
     mocker: MockerFixture,
     client: Any,
