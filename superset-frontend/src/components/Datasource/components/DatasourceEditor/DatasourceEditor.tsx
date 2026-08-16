@@ -130,7 +130,16 @@ interface Metric {
   certified_by?: string;
   certification_details?: string;
   warning_markdown?: string;
+  warning_text?: string;
   extra?: string;
+}
+
+interface MetricExtra {
+  certification?: {
+    certified_by?: string;
+    details?: string;
+  };
+  warning_markdown?: string;
 }
 
 interface Column {
@@ -779,6 +788,31 @@ function EditorsSelector({
 const ResultTable =
   extensionsRegistry.get('sqleditor.extension.resultTable') ?? FilterableTable;
 
+/**
+ * A metric reaches the editor in more than one shape. The dataset API keeps
+ * certification and warning inside the `extra` JSON string, while the explore
+ * datasource payload exposes them as top level fields and omits `extra`
+ * entirely. Legacy metrics only carry the warning in the `warning_text` column.
+ * Read every shape so the editor rehydrates the same values whichever entry
+ * point opened it.
+ */
+export function hydrateMetric(metric: Metric): Metric {
+  const {
+    certification: {
+      details = undefined,
+      certified_by: certifiedBy = undefined,
+    } = {},
+    warning_markdown: warningMarkdown,
+  } = (JSON.parse(metric.extra || '{}') as MetricExtra) || {};
+  return {
+    ...metric,
+    certification_details: metric.certification_details || details,
+    warning_markdown:
+      warningMarkdown || metric.warning_markdown || metric.warning_text || '',
+    certified_by: certifiedBy || metric.certified_by,
+  };
+}
+
 // Redux connector types
 interface QueryPayload {
   client_id?: string;
@@ -852,25 +886,7 @@ function DatasourceEditor({
   const [datasource, setDatasource] = useState<DatasourceObject>(() => ({
     ...propsDatasource,
     editors: normalizeSubjectsToPickerValues(propsDatasource.editors || []),
-    metrics: propsDatasource.metrics?.map(metric => {
-      const {
-        certified_by: certifiedByMetric,
-        certification_details: certificationDetails,
-      } = metric;
-      const {
-        certification: {
-          details = undefined,
-          certified_by: certifiedBy = undefined,
-        } = {},
-        warning_markdown: warningMarkdown,
-      } = JSON.parse(metric.extra || '{}') || {};
-      return {
-        ...metric,
-        certification_details: certificationDetails || details,
-        warning_markdown: warningMarkdown || '',
-        certified_by: certifiedBy || certifiedByMetric,
-      };
-    }),
+    metrics: propsDatasource.metrics?.map(hydrateMetric),
   }));
 
   const [errors, setErrors] = useState<string[]>([]);
