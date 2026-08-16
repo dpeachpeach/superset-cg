@@ -354,6 +354,72 @@ def test_execute_allowed_functions(
     assert result.status == QueryStatus.SUCCESS
 
 
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "SELECT SUM(metric_user_count) AS total_users FROM some_metrics_table",
+        "SELECT table_name FROM information_schema.tables "
+        "WHERE table_schema = 'example_schema'",
+    ],
+)
+def test_check_disallowed_functions_ignores_identifiers(
+    mocker: MockerFixture, database: Database, app_context: None, sql: str
+) -> None:
+    """Test that identifiers containing a disallowed function name are allowed."""
+    from superset.sql.execution.executor import SQLExecutor
+    from superset.sql.parse import SQLScript
+
+    mocker.patch.dict(
+        current_app.config,
+        {"DISALLOWED_SQL_FUNCTIONS": {"sqlite": {"user", "schema"}}},
+    )
+
+    executor = SQLExecutor(database)
+
+    assert executor._check_disallowed_functions(SQLScript(sql, engine="sqlite")) is None
+
+
+def test_check_disallowed_functions_detects_function_call(
+    mocker: MockerFixture, database: Database, app_context: None
+) -> None:
+    """Test that real disallowed function calls are still detected."""
+    from superset.sql.execution.executor import SQLExecutor
+    from superset.sql.parse import SQLScript
+
+    mocker.patch.dict(
+        current_app.config,
+        {"DISALLOWED_SQL_FUNCTIONS": {"sqlite": {"user", "schema"}}},
+    )
+
+    executor = SQLExecutor(database)
+    script = SQLScript("SELECT USER()", engine="sqlite")
+
+    assert executor._check_disallowed_functions(script) == {"user"}
+
+
+def test_execute_identifier_containing_disallowed_function(
+    mocker: MockerFixture, database: Database, app_context: None
+) -> None:
+    """Test that a column containing a disallowed function name is not blocked."""
+    mock_query_execution(mocker, database, return_data=[(5,)], column_names=["total"])
+    mocker.patch.dict(
+        current_app.config,
+        {
+            "SQL_QUERY_MUTATOR": None,
+            "SQLLAB_TIMEOUT": 30,
+            "SQL_MAX_ROW": None,
+            "DISALLOWED_SQL_FUNCTIONS": {"sqlite": {"user", "schema"}},
+            "QUERY_LOGGER": None,
+        },
+    )
+
+    result = database.execute(
+        "SELECT SUM(metric_user_count) AS total_users FROM some_metrics_table"
+    )
+
+    assert result.status == QueryStatus.SUCCESS
+
+
 def test_execute_disallowed_tables(
     mocker: MockerFixture, database: Database, app_context: None
 ) -> None:
