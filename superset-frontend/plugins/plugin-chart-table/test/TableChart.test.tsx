@@ -2290,6 +2290,72 @@ describe('plugin-chart-table', () => {
           expect(screen.getByText('Michael')).toBeInTheDocument();
         });
       });
+
+      test('renders without throwing when the column count changes between renders', async () => {
+        type DataRow = {
+          city: string;
+          firstName: string;
+        };
+
+        const makeColumns = (): Column<DataRow>[] => [
+          {
+            Header: ({ column }: HeaderProps<DataRow>) => (
+              <th data-column-name={column.id}>First name</th>
+            ),
+            Cell: ({ value }: CellProps<DataRow>) => <td>{value}</td>,
+            accessor: 'firstName',
+          },
+          {
+            Header: ({ column }: HeaderProps<DataRow>) => (
+              <th data-column-name={column.id}>City</th>
+            ),
+            Cell: ({ value }: CellProps<DataRow>) => <td>{value}</td>,
+            accessor: 'city',
+          },
+        ];
+
+        const data: DataRow[] = [
+          { firstName: 'Michael', city: 'Paris' },
+          { firstName: 'Jordan', city: 'London' },
+        ];
+
+        const onFilteredRowsChange = jest.fn();
+
+        const renderDataTable = (columns: Column<DataRow>[]) => (
+          <ProviderWrapper>
+            <DataTable<DataRow>
+              columns={columns}
+              data={columns.length === 0 ? [] : data}
+              rowCount={columns.length === 0 ? 0 : data.length}
+              serverPagination={false}
+              serverPaginationData={{}}
+              onServerPaginationChange={jest.fn()}
+              handleSortByChange={jest.fn()}
+              sortByFromParent={[]}
+              onSearchColChange={jest.fn()}
+              searchOptions={[]}
+              onFilteredRowsChange={onFilteredRowsChange}
+              sticky={false}
+            />
+          </ProviderWrapper>
+        );
+
+        const { rerender } = render(renderDataTable([]));
+
+        expect(screen.getByText('No data found')).toBeInTheDocument();
+
+        rerender(renderDataTable(makeColumns()));
+
+        await waitFor(() => {
+          expect(screen.getByText('Michael')).toBeInTheDocument();
+        });
+
+        rerender(renderDataTable([]));
+
+        await waitFor(() => {
+          expect(screen.getByText('No data found')).toBeInTheDocument();
+        });
+      });
     });
 
     test('should not reset pagination when a cell is clicked and data re-renders (#42010)', async () => {
