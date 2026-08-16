@@ -1435,6 +1435,7 @@ class TestRolePermission(SupersetTestCase):
         assert ("can_share_chart", "Superset") in perm_set
         assert ("can_share_dashboard", "Superset") in perm_set
         assert ("can_userinfo", "UserDBModelView") in perm_set
+        assert ("can_read", "UserInfo") in perm_set
         assert ("can_view_chart_as_table", "Dashboard") in perm_set
         assert ("can_view_query", "Dashboard") in perm_set
         self.assert_can_menu("Databases", perm_set)
@@ -1701,6 +1702,7 @@ class TestRolePermission(SupersetTestCase):
         assert ("can_share_chart", "Superset") in gamma_perm_set
         assert ("can_share_dashboard", "Superset") in gamma_perm_set
         assert ("can_userinfo", "UserDBModelView") in gamma_perm_set
+        assert ("can_read", "UserInfo") in gamma_perm_set
         assert ("can_view_chart_as_table", "Dashboard") in gamma_perm_set
         assert ("can_view_query", "Dashboard") in gamma_perm_set
 
