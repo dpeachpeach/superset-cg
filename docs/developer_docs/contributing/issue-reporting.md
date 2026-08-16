@@ -321,50 +321,39 @@ Send to: security@apache.org
 - `api`: REST API
 - `security`: Security related
 
-### Status Labels
-
-- `needs-triage`: Awaiting review
-- `confirmed`: Bug confirmed
-- `in-progress`: Being worked on
-- `blocked`: Blocked by dependency
-- `stale`: No activity for 30+ days
+The exact label set changes over time — browse the
+[repository's labels](https://github.com/apache/superset/labels) for the
+current list rather than assuming a label exists.
 
 ## Issue Lifecycle
 
 ### 1. Creation
 
 - User creates issue with template
-- Auto-labeled as `needs-triage`
+- Automation adds an org label based on the author's public organization
 
 ### 2. Triage
 
-- Maintainer reviews within 7 days
+- A maintainer reviews the issue when one picks it up; there is no guaranteed
+  response time
 - Labels applied (priority, type, component)
 - Questions asked if needed
 
-### 3. Confirmation
+### 3. Development
 
-- Bug reproduced or feature discussed
-- Label changed to `confirmed`
-- Assigned to milestone if applicable
+- A contributor claims the issue by commenting on it
+- PR linked to the issue
 
-### 4. Development
-
-- Contributor claims issue
-- Label changed to `in-progress`
-- PR linked to issue
-
-### 5. Resolution
+### 4. Resolution
 
 - PR merged
-- Issue auto-closed
-- Or manually closed with explanation
+- Issue auto-closed by the linked PR, or manually closed with an explanation
 
 ## Following Up
 
 ### If No Response
 
-After 7 days without response:
+If an issue sits untriaged, a polite ping is fine:
 
 ```markdown
 @apache/superset-committers This issue hasn't been triaged yet.
@@ -377,12 +366,6 @@ Could someone please take a look?
 Update: I found that this only happens when [condition].
 Here's additional debugging information: [details]
 ```
-
-### Issue Staleness
-
-- Bot marks stale after 30 days of inactivity
-- Closes after 7 more days without activity
-- To keep open: Comment with updates
 
 ## Tips for Success
 
