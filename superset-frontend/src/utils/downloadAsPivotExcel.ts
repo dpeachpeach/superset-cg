@@ -17,12 +17,19 @@
  * under the License.
  */
 import { utils, writeFile } from 'xlsx';
+import { logging } from '@apache-superset/core/utils';
 
 export default function exportPivotExcel(
   tableSelector: string,
   fileName: string,
 ) {
   const table = document.querySelector(tableSelector);
+  if (!table) {
+    logging.error(
+      `[exportPivotExcel] No element found for selector: "${tableSelector}"`,
+    );
+    return;
+  }
   const workbook = utils.table_to_book(table);
   writeFile(workbook, `${fileName}.xlsx`);
 }
