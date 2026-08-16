@@ -33,7 +33,11 @@ import {
 } from '@superset-ui/core';
 import { SupersetTheme } from '@apache-superset/core/theme';
 import { GenericDataType } from '@apache-superset/core/common';
-import { SortSeriesType, LegendPaddingType } from '@superset-ui/chart-controls';
+import {
+  SortSeriesType,
+  LegendPaddingType,
+  TIME_COMPARISON_SEPARATOR,
+} from '@superset-ui/chart-controls';
 import { format } from 'echarts/core';
 import type { LegendComponentOption } from 'echarts/components';
 import type { SeriesOption } from 'echarts';
@@ -402,11 +406,20 @@ export function extractDataTotalValues(
     legendState,
     extraMetricLabels,
   } = opts;
-  const excludedKeys = new Set([xAxisCol, ...(extraMetricLabels ?? [])]);
+  const excludedMetricLabels = ensureIsArray(extraMetricLabels);
+  const excludedKeys = new Set([xAxisCol, ...excludedMetricLabels]);
+  // A time comparison offset of an excluded metric is derived from it as
+  // `<label>__<offset>`, so it must be excluded too, while a distinct metric
+  // that merely shares a prefix (`SortTotal` vs `Sort`) must not be.
+  const isExcluded = (key: string) =>
+    excludedKeys.has(key) ||
+    excludedMetricLabels.some(label =>
+      key.startsWith(`${label}${TIME_COMPARISON_SEPARATOR}`),
+    );
   if (stack) {
     data.forEach(datum => {
       const values = Object.keys(datum).reduce((prev, curr) => {
-        if (excludedKeys.has(curr)) {
+        if (isExcluded(curr)) {
           return prev;
         }
         if (legendState && !legendState[curr]) {
