@@ -850,6 +850,10 @@ describe('Does transformProps transform series correctly', () => {
       timeseries_limit_metric: 'sort_metric',
       x_axis_sort: 'sort_metric',
       time_compare: ['1 year ago'],
+      // transformProps reads the offsets from the camelized formData, which
+      // the test helper replaces with this raw object, so both spellings are
+      // needed here to mirror what the chart receives.
+      timeCompare: ['1 year ago'],
       comparison_type: ComparisonType.Values,
     };
     const sortQueriesData: ChartDataResponseResult[] = [
