@@ -23,6 +23,11 @@ from werkzeug.utils import secure_filename
 # SMTP headers, Content-Disposition filenames, and headless-browser document.title.
 _CONTROL_CHARS_RE = re.compile(r"[\x00-\x1f\x7f-\x9f]")
 
+# Export ZIPs nest these names under a root directory, so entries are kept well
+# below the 255 character limit common to Windows and most filesystems to leave
+# room for the enclosing path.
+MAX_FILENAME_LENGTH = 200
+
 
 def sanitize_title(title: str) -> str:
     """Remove all C0/C1 control characters from a title string."""
@@ -32,5 +37,9 @@ def sanitize_title(title: str) -> str:
 def get_filename(model_name: str, model_id: int, skip_id: bool = False) -> str:
     model_name = sanitize_title(model_name)
     slug = secure_filename(model_name)
-    filename = slug if skip_id else f"{slug}_{model_id}"
-    return filename if slug else str(model_id)
+    if not slug:
+        return str(model_id)
+
+    suffix = "" if skip_id else f"_{model_id}"
+    slug = slug[: MAX_FILENAME_LENGTH - len(suffix)].rstrip("_")
+    return f"{slug}{suffix}" if slug else str(model_id)
