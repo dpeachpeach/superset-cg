@@ -1,0 +1,7 @@
+batch_window_seconds: 60
+confidence_threshold: 0.3
+max_ci_rounds: 3
+max_concurrent_workers: 0
+scout_batch_max: 25
+triage_interval_seconds: 1800
+triage_mode: manual
