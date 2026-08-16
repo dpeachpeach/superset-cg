@@ -848,6 +848,7 @@ describe('Does transformProps transform series correctly', () => {
       groupby: [],
       metrics: ['San Francisco', 'New York', 'Boston'],
       timeseries_limit_metric: 'sort_metric',
+      x_axis_sort: 'sort_metric',
       time_compare: ['1 year ago'],
       comparison_type: ComparisonType.Values,
     };
