@@ -242,4 +242,9 @@ class AppRootMiddleware:
             environ["PATH_INFO"] = original_path_info[len(self.app_root) :]
             environ["SCRIPT_NAME"] = self.app_root
             return self.wsgi_app(environ, start_response)
+        if original_path_info.startswith("/static/"):
+            # Webpack compiles asset paths with a hardcoded /static/assets/
+            # publicPath, so these requests never carry the app root prefix.
+            # Pass them through unmodified rather than 404ing.
+            return self.wsgi_app(environ, start_response)
         return NotFound()(environ, start_response)
