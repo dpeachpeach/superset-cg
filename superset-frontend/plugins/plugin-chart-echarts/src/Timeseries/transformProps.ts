@@ -1423,7 +1423,7 @@ export default function transformProps(
         // Each row is formatted with the format of the metric behind its
         // series, matching the series' value labels; a chart-level fallback
         // would drop per-metric formats whenever more than one metric is
-        // plotted (#33757).
+        // plotted.
         const getRowFormatter = (seriesKey: string) =>
           forcePercentFormatter
             ? percentFormatter

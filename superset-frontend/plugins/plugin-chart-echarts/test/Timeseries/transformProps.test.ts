@@ -2441,7 +2441,7 @@ test('honors the snake_case flag the compare-chart migration stores in params', 
 test('tooltip formats each row with the format of its own metric', () => {
   // Two metrics with different saved formats. The tooltip has to resolve the
   // formatter per series, the way the series value labels do — a single
-  // chart-level formatter drops the per-metric formats (#33757).
+  // chart-level formatter drops the per-metric formats.
   const queryData = createTestQueryData(
     [{ __timestamp: BASE_TIMESTAMP, sum__num: 1234.5, pct__num: 0.5 }],
     {

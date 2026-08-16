@@ -1300,8 +1300,7 @@ test('tooltip resolves per-metric formats by query when both queries share a y-a
   // Query A formats as currency, Query B as a percentage, and both are
   // plotted against the primary y-axis. The tooltip must follow the query a
   // series belongs to rather than its axis, otherwise every row is formatted
-  // with Query A's metric format while the value labels stay correct
-  // (#33757).
+  // with Query A's metric format while the value labels stay correct.
   const queryDataA = createTestQueryData(
     [{ ds: 599616000000, sum__num: 1234.5 }],
     {
@@ -1343,9 +1342,9 @@ test('tooltip resolves per-metric formats by query when both queries share a y-a
   });
   const transformed = transformProps(chartProps);
 
-  const formatter = (transformed.echartOptions.tooltip as any).formatter as (
-    params: unknown,
-  ) => string;
+  const { formatter } = (
+    transformed.echartOptions as unknown as TooltipFormatterOptions
+  ).tooltip;
 
   expect(
     formatter({

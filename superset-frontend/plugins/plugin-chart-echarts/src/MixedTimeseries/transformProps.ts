@@ -362,7 +362,7 @@ export default function transformProps(
   // The query a rendered series comes from, keyed by its rendered name. The
   // metrics, label map and axis format that describe a series follow its
   // query, not the y-axis it happens to be plotted against, so both queries
-  // sharing an axis must not collapse into one formatter (#33757). Names
+  // sharing an axis must not collapse into one formatter. Names
   // colliding across queries resolve to Query A, as the series lookups do.
   const seriesQueryIndex: Record<string, 0 | 1> = {};
   const mapSeriesIdToQuery = (
