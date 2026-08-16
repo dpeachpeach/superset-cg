@@ -45,7 +45,13 @@ const getCrossFilterDataMask =
     groupby: QueryFormColumn[],
     labelMap: Record<string, string[]>,
   ) =>
-  (value: string) => {
+  (value: string): ContextMenuFilters['crossFilter'] => {
+    // Clicks that do not map to a groupby value (the pie total label, the
+    // "Other" slice, an unnamed element) must not emit a cross-filter.
+    if (!value) {
+      return undefined;
+    }
+
     const selected = Object.values(selectedValues);
     let values: string[];
     if (selected.includes(value)) {
@@ -54,9 +60,11 @@ const getCrossFilterDataMask =
       values = [value];
     }
 
-    const groupbyValues = values
-      .map(value => labelMap[value])
-      .filter(Boolean) as string[][];
+    if (values.some(v => !labelMap[v])) {
+      return undefined;
+    }
+
+    const groupbyValues = values.map(v => labelMap[v]);
 
     return {
       dataMask: {
