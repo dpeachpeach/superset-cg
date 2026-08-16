@@ -33,7 +33,11 @@ import {
 } from '@superset-ui/core';
 import { SupersetTheme } from '@apache-superset/core/theme';
 import { GenericDataType } from '@apache-superset/core/common';
-import { SortSeriesType, LegendPaddingType } from '@superset-ui/chart-controls';
+import {
+  SortSeriesType,
+  LegendPaddingType,
+  TIME_COMPARISON_SEPARATOR,
+} from '@superset-ui/chart-controls';
 import { format } from 'echarts/core';
 import type { LegendComponentOption } from 'echarts/components';
 import type { SeriesOption } from 'echarts';
@@ -402,11 +406,18 @@ export function extractDataTotalValues(
     legendState,
     extraMetricLabels,
   } = opts;
-  const excludedKeys = new Set([xAxisCol, ...(extraMetricLabels ?? [])]);
+  const excludedLabels = [xAxisCol, ...(extraMetricLabels ?? [])];
+  // Time comparison offsets derive columns named `<label>__<offset>`, which
+  // belong to the same excluded metric and must not be summed either.
+  const isExcluded = (key: string) =>
+    excludedLabels.some(
+      label =>
+        key === label || key.startsWith(`${label}${TIME_COMPARISON_SEPARATOR}`),
+    );
   if (stack) {
     data.forEach(datum => {
       const values = Object.keys(datum).reduce((prev, curr) => {
-        if (excludedKeys.has(curr)) {
+        if (isExcluded(curr)) {
           return prev;
         }
         if (legendState && !legendState[curr]) {
