@@ -51,6 +51,7 @@ import {
   getOriginalSeries,
   getTimeOffset,
   isDerivedSeries,
+  TIME_COMPARISON_SEPARATOR,
 } from '@superset-ui/chart-controls';
 import type { EChartsCoreOption } from 'echarts/core';
 import type {
@@ -367,9 +368,23 @@ export default function transformProps(
   // metric. extraMetricLabels must be mapped the same way, or a sort-only
   // metric with a verbose_name set would silently fail to match here (and in
   // extractSeries below, which has the same requirement).
-  const extraMetricLabels = extractExtraMetrics(chartProps.rawFormData)
-    .map(getMetricLabel)
-    .map(label => verboseMap[label] ?? label);
+  // Time comparison derives a `<raw label>__<offset>` column from every query
+  // metric, sort-only metrics included, and those columns keep the raw label
+  // because rebaseForecastDatum resolves only base columns through verboseMap.
+  // Exclude them alongside the base labels so a sort-only metric's shifted
+  // column isn't rendered either.
+  const timeCompareOffsets = ensureIsArray(timeCompare).map(String);
+  const extraMetricRawLabels = extractExtraMetrics(chartProps.rawFormData).map(
+    getMetricLabel,
+  );
+  const extraMetricLabels = [
+    ...extraMetricRawLabels.map(label => verboseMap[label] ?? label),
+    ...extraMetricRawLabels.flatMap(label =>
+      timeCompareOffsets.map(
+        offset => `${label}${TIME_COMPARISON_SEPARATOR}${offset}`,
+      ),
+    ),
+  ];
   const { totalStackedValues, thresholdValues } = extractDataTotalValues(
     rebasedData,
     {
@@ -433,7 +448,6 @@ export default function transformProps(
   // `<offset>|<dims>` key for a series name belonging to that metric, or
   // undefined if the name doesn't belong to it. Keying by offset pairs each
   // comparison value series with the size series from the same offset.
-  const timeCompareOffsets = ensureIsArray(timeCompare).map(String);
   const matchSeriesKey = (
     name: string,
     rawLabel: string,

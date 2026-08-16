@@ -837,6 +837,60 @@ describe('Does transformProps transform series correctly', () => {
     expect(totalLabels).toEqual(['32']);
   });
 
+  test('should exclude a sort-only metric time comparison column from the series', () => {
+    // Time comparison derives a column per query metric, sort-only metrics
+    // included, and those columns keep the raw metric label, so
+    // extraMetricLabels must carry `<raw label>__<offset>` keys too —
+    // otherwise the sort metric's shifted column is drawn and legended.
+    const sortMetricVerboseMap = { sort_metric: 'Sort By Metric' };
+    const sortFormData: SqlaFormData = {
+      ...formData,
+      groupby: [],
+      metrics: ['San Francisco', 'New York', 'Boston'],
+      timeseries_limit_metric: 'sort_metric',
+      x_axis_sort: 'sort_metric',
+      time_compare: ['1 year ago'],
+      // transformProps reads the offsets from the camelized formData, which
+      // the test helper replaces with this raw object, so both spellings are
+      // needed here to mirror what the chart receives.
+      timeCompare: ['1 year ago'],
+      comparison_type: ComparisonType.Values,
+    };
+    const sortQueriesData: ChartDataResponseResult[] = [
+      createTestQueryData(
+        createTestData(
+          [
+            {
+              'San Francisco': 1,
+              'New York': 2,
+              Boston: 3,
+              'Sort By Metric': 4,
+              'San Francisco__1 year ago': 5,
+              'New York__1 year ago': 6,
+              'Boston__1 year ago': 7,
+              'sort_metric__1 year ago': 8,
+            },
+          ],
+          { intervalMs: 300000000 },
+        ),
+      ),
+    ];
+    const transformed = transformProps(
+      createTestChartProps({
+        formData: sortFormData,
+        queriesData: sortQueriesData,
+        datasource: { verboseMap: sortMetricVerboseMap },
+      }),
+    );
+    const seriesNames = (transformed.echartOptions.series as seriesType[]).map(
+      series => series.name,
+    );
+
+    expect(seriesNames).not.toContain('sort_metric__1 year ago');
+    expect(seriesNames).not.toContain('Sort By Metric');
+    expect(transformed.legendData).not.toContain('sort_metric__1 year ago');
+  });
+
   test('should show labels on values >= percentageThreshold if onlyTotal is false', () => {
     const chartProps = createTestChartProps({ formData, queriesData });
 
