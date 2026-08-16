@@ -578,6 +578,32 @@ class TestAppRootMiddlewareBoundary:
         assert status.startswith("404")
         assert "PATH_INFO" not in captured
 
+    def test_static_assets_pass_through_unstripped(self):
+        """Webpack hardcodes the /static/assets/ publicPath at build time, so
+        asset requests arrive without the app root prefix and must still be
+        served with PATH_INFO and SCRIPT_NAME untouched."""
+        middleware, captured = self._make("/myapp")
+        status = self._call(middleware, "/static/assets/images/superset-logo-horiz.png")
+        assert status.startswith("200")
+        assert captured["PATH_INFO"] == "/static/assets/images/superset-logo-horiz.png"
+        assert captured["SCRIPT_NAME"] == ""
+
+    def test_static_prefix_without_boundary_is_404(self):
+        """A path like "/staticfoo/bar.png" merely shares a string prefix with
+        "/static/" and stays a 404."""
+        middleware, captured = self._make("/myapp")
+        status = self._call(middleware, "/staticfoo/bar.png")
+        assert status.startswith("404")
+        assert "PATH_INFO" not in captured
+
+    def test_app_root_prefixed_static_still_stripped(self):
+        """Assets requested under the app root keep the existing behavior."""
+        middleware, captured = self._make("/myapp")
+        status = self._call(middleware, "/myapp/static/assets/index.js")
+        assert status.startswith("200")
+        assert captured["PATH_INFO"] == "/static/assets/index.js"
+        assert captured["SCRIPT_NAME"] == "/myapp"
+
     def test_trailing_slash_app_root_is_normalized(self):
         middleware, captured = self._make("/myapp/")
         status = self._call(middleware, "/myapp/welcome/")
