@@ -16,7 +16,7 @@
 # under the License.
 import pytest
 
-from superset.utils.file import get_filename, sanitize_title
+from superset.utils.file import get_filename, MAX_FILENAME_LENGTH, sanitize_title
 
 
 @pytest.mark.parametrize(
@@ -37,6 +37,9 @@ from superset.utils.file import get_filename, sanitize_title
         ("Energy\x08Sankey", 132, False, "EnergySankey_132"),
         ("Energy\x08Sankey", 132, True, "EnergySankey"),
         ("Sales\x7fReport", 1, False, "SalesReport_1"),
+        ("a" * 250, 132, False, f"{'a' * (MAX_FILENAME_LENGTH - 4)}_132"),
+        ("a" * 250, 132, True, "a" * MAX_FILENAME_LENGTH),
+        (f"{'a' * (MAX_FILENAME_LENGTH - 5)} b", 132, False, f"{'a' * 195}_132"),
     ],
 )
 def test_get_filename(
@@ -44,6 +47,7 @@ def test_get_filename(
 ) -> None:
     original_filename = get_filename(model_name, model_id, skip_id)
     assert expected_filename == original_filename
+    assert len(original_filename) <= MAX_FILENAME_LENGTH
 
 
 @pytest.mark.parametrize(
